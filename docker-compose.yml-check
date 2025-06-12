@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  frontend:
+#    build:
+    container_name: wanderlust-frontend
+    dockerfile: Dockerfile
+    ports:
+      - "8008:8000"
+    volumes:
+      - ./frontend
+    depends_on:
+      - backend
+environment:
+      - REACT_APP_API_URL=http://localhost:5000   
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      container_name: wanderlust-backend
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/wanderlust
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27000:27017"
+volumes:
+      - mongodb_data:/data/db
+
+volumes:
+  mongodb_data:
+
