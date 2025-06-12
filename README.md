@@ -16,33 +16,102 @@ At its core, this project embodies two important aims:
 
 _I'd love for you to make the most of this project - it's all about learning, helping, and growing in the open-source world._
 
-## Setting up the project locally
+## Setting up the project locally- Containerizing
 
-### Setting up the Backend
+1. Docker file for backend
+   
+                     FROM node:18-alpine
 
-1. **Fork and Clone the Repository**
+                     WORKDIR /app
+
+                     COPY package*.json ./
+
+                     RUN npm install
+
+                     COPY . .
+
+                     EXPOSE 5000
+
+                     CMD ["npm","start"]
+   
+2. Docker file for frontend 
 
    ```bash
-   git clone https://github.com/{your-username}/wanderlust.git
+                    FROM node:18-alpine AS builder
+
+                    WORKDIR /app
+
+                    COPY package*.json ./
+
+                    RUN npm install
+
+                    COPY . .
+
+                    FROM node:18-alpine
+
+                    WORKDIR /app
+
+                    COPY --from=builder /app ./
+
+                    ENTRYPOINT ["npm", "run", "dev", "--", "--host"]
    ```
 
-2. **Navigate to the Backend Directory**
+3. Docker-compose file
 
    ```bash
-   cd backend
+
+    version: "3.8"
+
+        services:
+    backend:
+    container_name: backend
+    build: ./backend
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./backend/.env.sample
+    depends_on:
+      - mongo
+   
+    frontend:
+    container_name: frontend
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    env_file:
+      - ./frontend/.env.local
+
+   mongo:
+    container_name: mongo
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./backend/data:/data
+
+   volumes:
+   data:
    ```
 
-3. **Install Required Dependencies**
+4. **Configure Environment Variables-backend**
+          #backend/.env.sample
+      
+         MONGODB_URI="mongodb://mongo/wanderlust"
+         CORS_ORIGIN="http:localhost:5173"
+7. **Configure Environment Variables-backend**
+        # frontend/.env.local
+
+         VITE_API_PATH="http://localhost:5000"
+
+ 6.  **Set up your MongoDB Database**
 
    ```bash
-   npm i
+  - Open MongoDB Compass and connect MongoDB locally at `mongodb://localhost:27017`.
+ 
    ```
-
-4. **Set up your MongoDB Database**
-
-   - Open MongoDB Compass and connect MongoDB locally at `mongodb://localhost:27017`.
-
-5. **Import sample data**
+7.  **Import sample data**
 
    > To populate the database with sample posts, you can copy the content from the `backend/data/sample_posts.json` file and insert it as a document in the `wanderlust/posts` collection in your local MongoDB database using either MongoDB Compass or `mongoimport`.
 
@@ -50,50 +119,10 @@ _I'd love for you to make the most of this project - it's all about learning, he
    mongoimport --db wanderlust --collection posts --file ./data/sample_posts.json --jsonArray
    ```
 
-6. **Configure Environment Variables**
 
-   ```bash
-   cp .env.sample .env
-   ```
+### Issues
 
-7. **Start the Backend Server**
 
-   ```bash
-   npm start
-   ```
-
-   > You should see the following on your terminal output on successful setup.
-   >
-   > ```bash
-   > [BACKEND] Server is running on port 5000
-   > [BACKEND] Database connected: mongodb://127.0.0.1/wanderlust
-   > ```
-
-### Setting up the Frontend
-
-1. **Open a New Terminal**
-
-   ```bash
-   cd frontend
-   ```
-
-2. **Install Dependencies**
-
-   ```bash
-   npm i
-   ```
-
-3. **Configure Environment Variables**
-
-   ```bash
-   cp .env.sample .env.local
-   ```
-
-4. **Launch the Development Server**
-
-   ```bash
-   npm run dev
-   ```
 
 ## 🌟 Ready to Contribute?
 
